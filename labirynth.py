@@ -1,6 +1,7 @@
 from manim import *
 from manim import config
 import random
+import time
 
 class DFSLabirynth():
   stack = []  #from numOfCellsInRow increase to the right and then every row up is + (row+2) count
@@ -26,13 +27,13 @@ class DFSLabirynth():
   def startingPoint(self):
     x = random.randrange(1, numOfCellsInRow)
     y = random.randrange(1, numOfCellsInColumn)
-    print(x, y)
-    print(self.visited)
+    # print(x, y)
+    # print(self.visited)
     self.visited[x][y] = True
     self.stack.append((x, y))
     return [x, y]
   def listFree(self, x, y):
-    print("list free:" + str(x) + " " + str(y) + " " + str(self.visited[x-1][y]) + " " + str(self.visited[x][y-1]) + " " + str(self.visited[x][y+1]) + " " + str(self.visited[x][y+1]) + " ")
+    # print("list free:" + str(x) + " " + str(y) + " " + str(self.visited[x-1][y]) + " " + str(self.visited[x][y-1]) + " " + str(self.visited[x][y+1]) + " " + str(self.visited[x][y+1]) + " ")
     freeNeighbors = []
     coords = [] #for animation purposes only
     if(not self.visited[x-1][y]):
@@ -58,11 +59,11 @@ class DFSLabirynth():
       return [x+1, y]
     return [x, y+1]
   def labirynth(self, startingPoint):
-    print(self.stack)
+    # print(self.stack)
     [x, y] = startingPoint
     self.verticesOrdered.append((x, y))
     while(True):
-      print("ff: " + str(x) + " " + str(y))
+      # print("ff: " + str(x) + " " + str(y))
       neighbors = self.listFree(x, y)
       if(neighbors):
         choosen = random.choice(neighbors)
@@ -73,11 +74,11 @@ class DFSLabirynth():
         self.visited[x][y] = True
       else: #no neighbors
         if(self.stack):
-          print("stack size: " + str(len(self.stack)))
-          print(self.stack)
+          # print("stack size: " + str(len(self.stack)))
+          # print(self.stack)
           (x, y) = self.stack.pop()
           self.goingBack.append((x, y))
-          print("pop " + str(x) + " " + str(y))
+          # print("pop " + str(x) + " " + str(y))
         else:
           break
     return [x, y]
@@ -92,8 +93,8 @@ class DFSLabirynth():
 #left: cell.x, down: cell.y, right: cell.x+1, up: cell.y+1
 displayWidth = 1920
 displayHeight = 1080
-numOfCellsInRow = 6
-numOfCellsInColumn = 4
+numOfCellsInRow = 4
+numOfCellsInColumn = 3
 cellSize = min(displayHeight/numOfCellsInColumn, displayWidth/numOfCellsInRow)
 
 class MathGrid:
@@ -195,7 +196,7 @@ class AnimatedAlgorithm(Scene):
     self.play(*wiggleGrid, run_time = 2, rate_func=rate_functions.double_smooth)
     #here starts with input from algorithm
     # start/end - red, new cell - green,
-    # potential neighbor - yellow, go back - greenish blue
+    # potential neighbor - yellow, go back - blue
     self.verticesOrdered.reverse()
     self.freeNeighborsOrdered.reverse()
     self.edgeRemovalsOrdered.reverse()
@@ -204,46 +205,71 @@ class AnimatedAlgorithm(Scene):
     x, y = self.verticesOrdered.pop()
     self.play(self.updateCellColor(x, y).animate.set_fill(RED, opacity=1))
     numOfCells -= 1
+    groupAnimations = []
+    saveToHide = []
     while(numOfCells):
       neigbors = self.freeNeighborsOrdered.pop()
-      for neigbor in neigbors:
-        x, y = neigbor
-        showAndHide = self.updateCellColor(x, y)
-        self.play(showAndHide.animate.set_fill(YELLOW, opacity=0.5), run_time = RTM)
-        self.play(FadeOut(showAndHide), run_time = RTM)
+      groupAnimations.clear()
+      saveToHide.clear()
       if(neigbors):
+        for neigbor in neigbors:
+          x, y = neigbor
+          showAndHide = self.updateCellColor(x, y)
+          saveToHide.append(showAndHide)
+          groupAnimations.append(showAndHide.animate.set_fill(YELLOW, opacity=0.7))
+        self.play(*groupAnimations, run_time = RTM*0.25)
+        groupAnimations.clear()
+        for toHide in saveToHide:
+          groupAnimations.append(FadeOut(toHide))
+        self.play(*groupAnimations, run_time = RTM*0.25)
         x, y = self.verticesOrdered.pop()
         numOfCells-=1
+        groupAnimations.clear()
         match(self.edgeRemovalsOrdered.pop()):
           case 0:
-            self.play(FadeOut(self.vlo[y-1][x]), run_time = RTM*0.3)
+            groupAnimations.append(FadeOut(self.vlo[y-1][x]))
           case 1:
-            self.play(FadeOut(self.hlo[y][x-1]), run_time = RTM*0.3)
+            groupAnimations.append(FadeOut(self.hlo[y][x-1]))
           case 2:
-            self.play(FadeOut(self.vlo[y-1][x-1]), run_time = RTM*0.3)
+            groupAnimations.append(FadeOut(self.vlo[y-1][x-1]))
           case 3:
-            self.play(FadeOut(self.hlo[y-1][x-1]), run_time = RTM*0.3)
+            groupAnimations.append(FadeOut(self.hlo[y-1][x-1]))
         showAndHide = self.updateCellColor(x, y)
-        self.play(showAndHide.animate.set_fill(GREEN, opacity=0.5), run_time = RTM)
-        self.play(FadeOut(showAndHide), run_time = RTM)
+        groupAnimations.append(showAndHide.animate.set_fill(GREEN, opacity=1))
+        self.play(*groupAnimations, run_time = RTM)
+        self.play(FadeOut(showAndHide), run_time = RTM*0.25)
       else:
         x, y = self.goingBack.pop()
         showAndHide = self.updateCellColor(x, y)
-        self.play(showAndHide.animate.set_fill(BLUE, opacity=0.5), run_time = RTM)
-        self.play(FadeOut(showAndHide), run_time = RTM)
-
-    # self.wait(3)
+        self.play(showAndHide.animate.set_fill(BLUE, opacity=1), run_time = RTM*0.25)
+        self.play(FadeOut(showAndHide), run_time = RTM*0.25)
+    self.wait(3)
 
 # ========== MAIN MANAGEMENT SPACE ==========
 
 if __name__ == '__main__':
+  numOfCellsInRow = input("Enter number of cells in a row: ")
+  numOfCellsInColumn = input("Enter number of cells in a column: ")
+  RTM = input("Enter animation speed (e.g. 1)")
+  start = time.time()
   animation = AnimatedAlgorithm()
   [animation.vlines, animation.hlines] = MathGrid().genBaseGrid()
   animation.createLineObjects()
+  algoStart = time.time()
   algorithm = DFSLabirynth()
   algorithm.labirynth(algorithm.startingPoint())
+  passArgsStart = time.time()
   (animation.verticesOrdered,
    animation.freeNeighborsOrdered,
    animation.edgeRemovalsOrdered,
    animation.goingBack) = algorithm.giveAlgorithmTrace()
+  animationStart = time.time()
   animation.render(preview=True)
+  animationEnd = time.time()
+  print("Video quality: " + config.quality)
+  print("How long did it take in seconds:")
+  print("Animation grid preparation: " + str(round(algoStart-start, 3)))
+  print("Purely logical part of algorithm generation: " + str(round(passArgsStart-algoStart, 2)))
+  print("Passing animation data from algorithm: " + str(round(animationStart-passArgsStart, 2)))
+  print("Animation rendering: " + str(round(animationEnd-animationStart, 2)))
+  print("Whole process from start to end: " + str(round(animationEnd-start, 2)))
