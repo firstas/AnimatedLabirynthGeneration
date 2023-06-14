@@ -248,9 +248,9 @@ class AnimatedAlgorithm(Scene):
 # ========== MAIN MANAGEMENT SPACE ==========
 
 if __name__ == '__main__':
-  numOfCellsInRow = input("Enter number of cells in a row: ")
-  numOfCellsInColumn = input("Enter number of cells in a column: ")
-  RTM = input("Enter animation speed (e.g. 1): ")
+  numOfCellsInRow = int(input("Enter number of cells in a row: "))
+  numOfCellsInColumn = int(input("Enter number of cells in a column: "))
+  RTM = int(input("Enter animation speed (e.g. 1): "))
   start = time.time()
   animation = AnimatedAlgorithm()
   [animation.vlines, animation.hlines] = MathGrid().genBaseGrid()
