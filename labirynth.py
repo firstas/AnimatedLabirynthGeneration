@@ -250,7 +250,7 @@ class AnimatedAlgorithm(Scene):
 if __name__ == '__main__':
   numOfCellsInRow = input("Enter number of cells in a row: ")
   numOfCellsInColumn = input("Enter number of cells in a column: ")
-  RTM = input("Enter animation speed (e.g. 1)")
+  RTM = input("Enter animation speed (e.g. 1): ")
   start = time.time()
   animation = AnimatedAlgorithm()
   [animation.vlines, animation.hlines] = MathGrid().genBaseGrid()
