@@ -3,16 +3,23 @@ from manim import config
 import random
 import time
 
+#cell x starts from 1 (0 is boundry) and grows to the right
+#cell y starts from 1 (0 is boundry) and grows upwards
+#calculate edge from cell indices:
+#left: cell.x, down: cell.y, right: cell.x+1, up: cell.y+1
+displayWidth = 1920
+displayHeight = 1080
+
 class DFSLabirynth():
-  stack = []  #from numOfCellsInRow increase to the right and then every row up is + (row+2) count
-  visited = []
-  #animation trace variables: (all accessess in labirynth and listFree methods)
-  verticesOrdered = []  #tuples
-  freeNeighborsOrdered = [] #lists
-  edgeRemovalsOrdered = [] #numbers
-  goingBack = []  #tuples
   def __init__(self):
-    #all that happens in init is setting boudries to True and center to False
+    self.stack = []  #from numOfCellsInRow increase to the right and then every row up is + (row+2) count
+    self.visited = []
+    #animation trace variables: (all accessess in labirynth and listFree methods)
+    self.verticesOrdered = []  #tuples
+    self.freeNeighborsOrdered = [] #lists
+    self.edgeRemovalsOrdered = [] #numbers
+    self.goingBack = []  #tuples
+    #everything underneath is setting boudries to True and center to False
     self.visited.append((numOfCellsInColumn+2)*[True])  #if vertex visited
     for column in range(1, numOfCellsInRow+1):
       self.visited.append([True])
@@ -25,8 +32,14 @@ class DFSLabirynth():
   # def coordsFromStackIndex(self, n):
   #   return [int(n/(numOfCellsInRow+2)), (n%(numOfCellsInColumn+2))-1]
   def startingPoint(self):
-    x = random.randrange(1, numOfCellsInRow)
-    y = random.randrange(1, numOfCellsInColumn)
+    if(numOfCellsInRow > 1):
+      x = random.randrange(1, numOfCellsInRow)
+    else:
+      x = 1
+    if(numOfCellsInColumn > 1):
+      y = random.randrange(1, numOfCellsInColumn)
+    else:
+      y = 1
     # print(x, y)
     # print(self.visited)
     self.visited[x][y] = True
@@ -86,18 +99,11 @@ class DFSLabirynth():
     return (self.verticesOrdered, self.freeNeighborsOrdered,
             self.edgeRemovalsOrdered, self.goingBack)
 
-  
-#cell x starts from 1 (0 is boundry) and grows to the right
-#cell y starts from 1 (0 is boundry) and grows upwards
-#calculate edge from cell indices:
-#left: cell.x, down: cell.y, right: cell.x+1, up: cell.y+1
-displayWidth = 1920
-displayHeight = 1080
-numOfCellsInRow = 4
-numOfCellsInColumn = 3
-cellSize = min(displayHeight/numOfCellsInColumn, displayWidth/numOfCellsInRow)
-
 class MathGrid:
+  def __init__(self, numOfCellsInRow, numOfCellsInColumn, cellSize):
+    self.numOfCellsInRow = numOfCellsInRow
+    self.numOfCellsInColumn = numOfCellsInColumn
+    self.cellSize = cellSize
   #calculations coordinate system: [..., ...] -> [-1, 1]
   def genBaseGrid(self):
     #1.index is x, 2. is y, 3rd is beginning(2 points) and end(2 points) of line
@@ -132,29 +138,33 @@ class MathGrid:
 # 'high_quality', 'medium_quality', 'low_quality', 'example_quality']
 # config.quality = "medium_quality"
 config.quality = "high_quality"
-RTM = 0.2 # run_time multiplier
 
 class AnimatedAlgorithm(Scene):
-  xScale = 7/(displayWidth/2)
-  yScale = 3.9/(displayHeight/2)
-  vlines = [] #vertical; [[[]]] actually
-  hlines = [] #horizontal; [[[]]] actually
-  vlo = []   #vertival line objects; [[]] actually
-  hlo = []   #horizontal line objects; [[]] actually
-  #algorithm trace variables:
-  verticesOrdered = []  #tuples
-  freeNeighborsOrdered = [] #lists
-  edgeRemovalsOrdered = [] #numbers
-  goingBack = []  #tuples
-  #outer vertical (& horizontal) line object
-  ovlo = Line([(-displayWidth/2+numOfCellsInRow*cellSize)*xScale,
-               (-displayHeight/2)*yScale, 0],
-              [(-displayWidth/2+numOfCellsInRow*cellSize)*xScale,
-               (-displayHeight/2+numOfCellsInColumn*cellSize)*yScale, 0])
-  ohlo = Line([(-displayWidth/2+numOfCellsInRow*cellSize)*xScale,
-               (-displayHeight/2+numOfCellsInColumn*cellSize)*yScale, 0],
-              [(-displayWidth/2)*xScale,
-               (-displayHeight/2+numOfCellsInColumn*cellSize)*yScale, 0])
+  def dontOverrideManimInit(self, numOfCellsInRow, numOfCellsInColumn, cellSize, RTM):
+    self.numOfCellsInRow = numOfCellsInRow
+    self.numOfCellsInColumn = numOfCellsInColumn
+    self.cellSize = cellSize
+    self.RTM = RTM
+    self.xScale = 7/(displayWidth/2)
+    self.yScale = 3.9/(displayHeight/2)
+    self.vlines = [] #vertical; [[[]]] actually
+    self.hlines = [] #horizontal; [[[]]] actually
+    self.vlo = []   #vertival line objects; [[]] actually
+    self.hlo = []   #horizontal line objects; [[]] actually
+    #algorithm trace variables:
+    self.verticesOrdered = []  #tuples
+    self.freeNeighborsOrdered = [] #lists
+    self.edgeRemovalsOrdered = [] #numbers
+    self.goingBack = []  #tuples
+    #outer vertical (& horizontal) line object
+    self.ovlo = Line([(-displayWidth/2+numOfCellsInRow*cellSize)*self.xScale,
+                (-displayHeight/2)*self.yScale, 0],
+                [(-displayWidth/2+numOfCellsInRow*cellSize)*self.xScale,
+                (-displayHeight/2+numOfCellsInColumn*cellSize)*self.yScale, 0])
+    self.ohlo = Line([(-displayWidth/2+numOfCellsInRow*cellSize)*self.xScale,
+                (-displayHeight/2+numOfCellsInColumn*cellSize)*self.yScale, 0],
+                [(-displayWidth/2)*self.xScale,
+                (-displayHeight/2+numOfCellsInColumn*cellSize)*self.yScale, 0])
   def createLineObjects(self):
     tvrow = [[]] #temp v row
     for row in self.vlines:
@@ -180,17 +190,17 @@ class AnimatedAlgorithm(Scene):
       ).move_to(Point([self.xAlgoScale(x), self.yAlgoScale(y), 0])
       ).set_stroke(width=0)
   def construct(self):
-    self.play(Create(self.ovlo), run_time = RTM)
-    self.play(Create(self.ohlo), run_time = RTM)
+    self.play(Create(self.ovlo), run_time = self.RTM)
+    self.play(Create(self.ohlo), run_time = self.RTM)
     fadeInGrid = []
-    for row in range(numOfCellsInColumn):
-      for column in range(numOfCellsInRow):
+    for row in range(self.numOfCellsInColumn):
+      for column in range(self.numOfCellsInRow):
         fadeInGrid.append(FadeIn(self.vlo[row][column]))
         fadeInGrid.append(FadeIn(self.hlo[row][column]))
     self.play(*fadeInGrid, run_time=0.5, rate_func=linear)
     wiggleGrid = [Wiggle(self.ovlo), Wiggle(self.ohlo)]
-    for row in range(numOfCellsInColumn):
-      for column in range(numOfCellsInRow):
+    for row in range(self.numOfCellsInColumn):
+      for column in range(self.numOfCellsInRow):
         wiggleGrid.append(Wiggle(self.vlo[row][column]))
         wiggleGrid.append(Wiggle(self.hlo[row][column]))
     self.play(*wiggleGrid, run_time = 2, rate_func=rate_functions.double_smooth)
@@ -201,7 +211,7 @@ class AnimatedAlgorithm(Scene):
     self.freeNeighborsOrdered.reverse()
     self.edgeRemovalsOrdered.reverse()
     self.goingBack.reverse()
-    numOfCells = numOfCellsInColumn*numOfCellsInRow
+    numOfCells = self.numOfCellsInColumn*self.numOfCellsInRow
     x, y = self.verticesOrdered.pop()
     self.play(self.updateCellColor(x, y).animate.set_fill(RED, opacity=1))
     numOfCells -= 1
@@ -217,11 +227,11 @@ class AnimatedAlgorithm(Scene):
           showAndHide = self.updateCellColor(x, y)
           saveToHide.append(showAndHide)
           groupAnimations.append(showAndHide.animate.set_fill(YELLOW, opacity=0.7))
-        self.play(*groupAnimations, run_time = RTM*0.25)
+        self.play(*groupAnimations, run_time = self.RTM*0.25)
         groupAnimations.clear()
         for toHide in saveToHide:
           groupAnimations.append(FadeOut(toHide))
-        self.play(*groupAnimations, run_time = RTM*0.25)
+        self.play(*groupAnimations, run_time = self.RTM*0.25)
         x, y = self.verticesOrdered.pop()
         numOfCells-=1
         groupAnimations.clear()
@@ -236,13 +246,13 @@ class AnimatedAlgorithm(Scene):
             groupAnimations.append(FadeOut(self.hlo[y-1][x-1]))
         showAndHide = self.updateCellColor(x, y)
         groupAnimations.append(showAndHide.animate.set_fill(GREEN, opacity=1))
-        self.play(*groupAnimations, run_time = RTM)
-        self.play(FadeOut(showAndHide), run_time = RTM*0.25)
+        self.play(*groupAnimations, run_time = self.RTM)
+        self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
       else:
         x, y = self.goingBack.pop()
         showAndHide = self.updateCellColor(x, y)
-        self.play(showAndHide.animate.set_fill(BLUE, opacity=1), run_time = RTM*0.25)
-        self.play(FadeOut(showAndHide), run_time = RTM*0.25)
+        self.play(showAndHide.animate.set_fill(BLUE, opacity=1), run_time = self.RTM*0.25)
+        self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
     self.wait(3)
 
 # ========== MAIN MANAGEMENT SPACE ==========
@@ -250,10 +260,12 @@ class AnimatedAlgorithm(Scene):
 if __name__ == '__main__':
   numOfCellsInRow = int(input("Enter number of cells in a row: "))
   numOfCellsInColumn = int(input("Enter number of cells in a column: "))
-  RTM = float(input("Enter animation speed (e.g. 1): "))
+  cellSize = min(displayHeight/numOfCellsInColumn, displayWidth/numOfCellsInRow)
+  RTM = float(input("Enter animation speed (e.g. 1): "))  # run_time multiplier
   start = time.time()
   animation = AnimatedAlgorithm()
-  [animation.vlines, animation.hlines] = MathGrid().genBaseGrid()
+  animation.dontOverrideManimInit(numOfCellsInRow, numOfCellsInColumn, cellSize, RTM)
+  [animation.vlines, animation.hlines] = MathGrid(numOfCellsInRow, numOfCellsInColumn, cellSize).genBaseGrid()
   animation.createLineObjects()
   algoStart = time.time()
   algorithm = DFSLabirynth()
