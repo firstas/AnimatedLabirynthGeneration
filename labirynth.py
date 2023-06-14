@@ -27,10 +27,6 @@ class DFSLabirynth():
         self.visited[column].append(False)
       self.visited[column].append(True)
     self.visited.append((numOfCellsInColumn+2)*[True])
-  # def stackIndex(self, x, y):
-  #   return y*(numOfCellsInRow+2)+x+1
-  # def coordsFromStackIndex(self, n):
-  #   return [int(n/(numOfCellsInRow+2)), (n%(numOfCellsInColumn+2))-1]
   def startingPoint(self):
     if(numOfCellsInRow > 1):
       x = random.randrange(1, numOfCellsInRow)
@@ -40,13 +36,10 @@ class DFSLabirynth():
       y = random.randrange(1, numOfCellsInColumn)
     else:
       y = 1
-    # print(x, y)
-    # print(self.visited)
     self.visited[x][y] = True
     self.stack.append((x, y))
     return [x, y]
   def listFree(self, x, y):
-    # print("list free:" + str(x) + " " + str(y) + " " + str(self.visited[x-1][y]) + " " + str(self.visited[x][y-1]) + " " + str(self.visited[x][y+1]) + " " + str(self.visited[x][y+1]) + " ")
     freeNeighbors = []
     coords = [] #for animation purposes only
     if(not self.visited[x-1][y]):
@@ -72,11 +65,9 @@ class DFSLabirynth():
       return [x+1, y]
     return [x, y+1]
   def labirynth(self, startingPoint):
-    # print(self.stack)
     [x, y] = startingPoint
     self.verticesOrdered.append((x, y))
     while(True):
-      # print("ff: " + str(x) + " " + str(y))
       neighbors = self.listFree(x, y)
       if(neighbors):
         choosen = random.choice(neighbors)
@@ -87,11 +78,8 @@ class DFSLabirynth():
         self.visited[x][y] = True
       else: #no neighbors
         if(self.stack):
-          # print("stack size: " + str(len(self.stack)))
-          # print(self.stack)
           (x, y) = self.stack.pop()
           self.goingBack.append((x, y))
-          # print("pop " + str(x) + " " + str(y))
         else:
           break
     return [x, y]
@@ -205,8 +193,7 @@ class AnimatedAlgorithm(Scene):
         wiggleGrid.append(Wiggle(self.hlo[row][column]))
     self.play(*wiggleGrid, run_time = 2, rate_func=rate_functions.double_smooth)
     #here starts with input from algorithm
-    # start/end - red, new cell - green,
-    # potential neighbor - yellow, go back - blue
+    # start - red, new cell - green, free neighbor - yellow, go back - blue
     self.verticesOrdered.reverse()
     self.freeNeighborsOrdered.reverse()
     self.edgeRemovalsOrdered.reverse()
