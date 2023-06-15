@@ -126,6 +126,8 @@ class MathGrid:
 # 'high_quality', 'medium_quality', 'low_quality', 'example_quality']
 # config.quality = "medium_quality"
 config.quality = "high_quality"
+# ffmpeg_loglevel must be in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+config.ffmpeg_loglevel = "WARNING"
 
 class AnimatedAlgorithm(Scene):
   def dontOverrideManimInit(self, numOfCellsInRow, numOfCellsInColumn, cellSize, RTM):
@@ -248,7 +250,17 @@ if __name__ == '__main__':
   numOfCellsInRow = int(input("Enter number of cells in a row: "))
   numOfCellsInColumn = int(input("Enter number of cells in a column: "))
   cellSize = min(displayHeight/numOfCellsInColumn, displayWidth/numOfCellsInRow)
-  RTM = float(input("Enter animation speed (e.g. 1): "))  # run_time multiplier
+  onlyImage = input("Do you want to skip animations for many times faster outcome as final image (anythink besides 'y' means 'no')?: ")
+  if(onlyImage == "y"):
+    print("Great, don't bother about fileNotFound errors at the end. Image should show up anyways.")
+    config.save_last_frame = True
+    RTM = 1
+  else:
+    earlyRTM = input("Enter animation speed (e.g. 1 or leave for default): ")  # run_time multiplier
+    if(not earlyRTM == ''):
+      RTM = float(earlyRTM)
+    else:
+      RTM = 0.2
   start = time.time()
   animation = AnimatedAlgorithm()
   animation.dontOverrideManimInit(numOfCellsInRow, numOfCellsInColumn, cellSize, RTM)
