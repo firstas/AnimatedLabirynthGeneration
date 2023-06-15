@@ -127,14 +127,16 @@ class MathGrid:
 # config.quality = "medium_quality"
 config.quality = "high_quality"
 # ffmpeg_loglevel must be in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-config.ffmpeg_loglevel = "WARNING"
+# but where is main log level
 
 class AnimatedAlgorithm(Scene):
-  def dontOverrideManimInit(self, numOfCellsInRow, numOfCellsInColumn, cellSize, RTM):
+  def dontOverrideManimInit(self, numOfCellsInRow,
+  numOfCellsInColumn, cellSize, RTM, skipShowHideAnimations):
     self.numOfCellsInRow = numOfCellsInRow
     self.numOfCellsInColumn = numOfCellsInColumn
     self.cellSize = cellSize
     self.RTM = RTM
+    self.skipShowHideAnimations = skipShowHideAnimations
     self.xScale = 7/(displayWidth/2)
     self.yScale = 3.9/(displayHeight/2)
     self.vlines = [] #vertical; [[[]]] actually
@@ -211,37 +213,51 @@ class AnimatedAlgorithm(Scene):
       groupAnimations.clear()
       saveToHide.clear()
       if(neigbors):
-        for neigbor in neigbors:
-          x, y = neigbor
+        if(not self.skipShowHideAnimations):
+          for neigbor in neigbors:
+            x, y = neigbor
+            showAndHide = self.updateCellColor(x, y)
+            saveToHide.append(showAndHide)
+            groupAnimations.append(showAndHide.animate.set_fill(YELLOW, opacity=0.7))
+          self.play(*groupAnimations, run_time = self.RTM*0.25)
+          groupAnimations.clear()
+          for toHide in saveToHide:
+            groupAnimations.append(FadeOut(toHide))
+          self.play(*groupAnimations, run_time = self.RTM*0.25)
+          x, y = self.verticesOrdered.pop()
+          numOfCells-=1
+          groupAnimations.clear()
+          match(self.edgeRemovalsOrdered.pop()):
+            case 0:
+              groupAnimations.append(FadeOut(self.vlo[y-1][x]))
+            case 1:
+              groupAnimations.append(FadeOut(self.hlo[y][x-1]))
+            case 2:
+              groupAnimations.append(FadeOut(self.vlo[y-1][x-1]))
+            case 3:
+              groupAnimations.append(FadeOut(self.hlo[y-1][x-1]))
           showAndHide = self.updateCellColor(x, y)
-          saveToHide.append(showAndHide)
-          groupAnimations.append(showAndHide.animate.set_fill(YELLOW, opacity=0.7))
-        self.play(*groupAnimations, run_time = self.RTM*0.25)
-        groupAnimations.clear()
-        for toHide in saveToHide:
-          groupAnimations.append(FadeOut(toHide))
-        self.play(*groupAnimations, run_time = self.RTM*0.25)
-        x, y = self.verticesOrdered.pop()
-        numOfCells-=1
-        groupAnimations.clear()
-        match(self.edgeRemovalsOrdered.pop()):
-          case 0:
-            groupAnimations.append(FadeOut(self.vlo[y-1][x]))
-          case 1:
-            groupAnimations.append(FadeOut(self.hlo[y][x-1]))
-          case 2:
-            groupAnimations.append(FadeOut(self.vlo[y-1][x-1]))
-          case 3:
-            groupAnimations.append(FadeOut(self.hlo[y-1][x-1]))
-        showAndHide = self.updateCellColor(x, y)
-        groupAnimations.append(showAndHide.animate.set_fill(GREEN, opacity=1))
-        self.play(*groupAnimations, run_time = self.RTM)
-        self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
+          groupAnimations.append(showAndHide.animate.set_fill(GREEN, opacity=1))
+          self.play(*groupAnimations, run_time = self.RTM)
+          self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
+        else:
+          numOfCells-=1
+          x, y = self.verticesOrdered.pop()
+          match(self.edgeRemovalsOrdered.pop()):
+            case 0:
+              self.remove(self.vlo[y-1][x])
+            case 1:
+              self.remove(self.hlo[y][x-1])
+            case 2:
+              self.remove(self.vlo[y-1][x-1])
+            case 3:
+              self.remove(self.hlo[y-1][x-1])
       else:
-        x, y = self.goingBack.pop()
-        showAndHide = self.updateCellColor(x, y)
-        self.play(showAndHide.animate.set_fill(BLUE, opacity=1), run_time = self.RTM*0.25)
-        self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
+        if(not self.skipShowHideAnimations):
+          x, y = self.goingBack.pop()
+          showAndHide = self.updateCellColor(x, y)
+          self.play(showAndHide.animate.set_fill(BLUE, opacity=1), run_time = self.RTM*0.25)
+          self.play(FadeOut(showAndHide), run_time = self.RTM*0.25)
     self.wait(3)
 
 # ========== MAIN MANAGEMENT SPACE ==========
@@ -251,8 +267,9 @@ if __name__ == '__main__':
   numOfCellsInColumn = int(input("Enter number of cells in a column: "))
   cellSize = min(displayHeight/numOfCellsInColumn, displayWidth/numOfCellsInRow)
   onlyImage = input("Do you want to skip animations for many times faster outcome as final image (anythink besides 'y' means 'no')?: ")
+  skipShowHideAnimations = False
   if(onlyImage == "y"):
-    print("Great, don't bother about fileNotFound errors at the end. Image should show up anyways.")
+    skipShowHideAnimations = True
     config.save_last_frame = True
     RTM = 1
   else:
@@ -263,7 +280,7 @@ if __name__ == '__main__':
       RTM = 0.2
   start = time.time()
   animation = AnimatedAlgorithm()
-  animation.dontOverrideManimInit(numOfCellsInRow, numOfCellsInColumn, cellSize, RTM)
+  animation.dontOverrideManimInit(numOfCellsInRow, numOfCellsInColumn, cellSize, RTM, skipShowHideAnimations)
   [animation.vlines, animation.hlines] = MathGrid(numOfCellsInRow, numOfCellsInColumn, cellSize).genBaseGrid()
   animation.createLineObjects()
   algoStart = time.time()
@@ -275,7 +292,13 @@ if __name__ == '__main__':
    animation.edgeRemovalsOrdered,
    animation.goingBack) = algorithm.giveAlgorithmTrace()
   animationStart = time.time()
-  animation.render(preview=True)
+  if(not skipShowHideAnimations):
+    animation.render(preview=True)
+  else:
+    try:
+      animation.render(preview=True)
+    except FileNotFoundError:
+      pass
   animationEnd = time.time()
   print("Video quality: " + config.quality)
   print("How long did it take in seconds:")
